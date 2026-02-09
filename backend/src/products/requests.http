@@ -1,0 +1,16 @@
+### Create Order
+POST http://localhost:3000/orders
+Content-Type: application/json
+
+### Create Product (Valid)
+POST http://localhost:3000/products
+Content-Type: application/json
+
+{
+    "orderId": 2,
+    "title": "Gaming PC",
+    "description": "High performance laptop",
+    "quantity": 10,
+    "totalPrice": 1500.00,
+    "totalDiscount": 100.00
+}

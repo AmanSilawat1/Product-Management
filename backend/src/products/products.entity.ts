@@ -1,4 +1,5 @@
-import { AfterInsert, AfterRemove, AfterUpdate, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { AfterInsert, AfterRemove, AfterUpdate, Column, CreateDateColumn, DeleteDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Order } from "../orders/order.entity";
 
 @Entity()
 export class Product {
@@ -6,8 +7,8 @@ export class Product {
     id: number;
 
     // order id - required: reference to order.
-    @Column()
-    orderId: number;
+    @ManyToOne(() => Order, (order) => order.products)
+    order: Order;
 
     // title - required (non-empty product title)
     @Column()
@@ -22,23 +23,24 @@ export class Product {
     quantity: number;
 
     // total price - required (non-negative Decimal)
-    @Column()
+    @Column({ type: 'decimal', precision: 10, scale: 2 })
     totalPrice: number;
 
     // total discount - required (non-negative Decimal >= 0 and <= totalPrice)
-    @Column()
+    @Column({ type: 'decimal', precision: 10, scale: 2 })
     totalDiscount: number;
 
     // createdAt
-    @Column()
+    // createdAt
+    @CreateDateColumn()
     createdAt: Date;
 
     // updatedAt
-    @Column()
+    @UpdateDateColumn()
     updatedAt: Date;
 
     // deleted at: Soft delete timestamp or null
-    @Column({ nullable: true })
+    @DeleteDateColumn()
     deletedAt: Date;
 
     @AfterInsert()
