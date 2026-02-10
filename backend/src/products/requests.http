@@ -7,10 +7,28 @@ POST http://localhost:3000/products
 Content-Type: application/json
 
 {
-    "orderId": 2,
-    "title": "Gaming PC",
-    "description": "High performance laptop",
-    "quantity": 10,
-    "totalPrice": 1500.00,
-    "totalDiscount": 100.00
+  "orderId": 3,
+  "title": "Apple Watch Series 8",
+  "description": "Latest Apple Watch with advanced features",
+  "quantity": 5,
+  "totalPrice": 110000.00,
+  "totalDiscount": 10000.00
 }
+
+### Get All Products (Default)
+GET http://localhost:3000/products
+
+### Get All Products (Page 1, Limit 2)
+GET http://localhost:3000/products?page=1&limit=2
+
+### Get All Products (Page 2, Limit 2)
+GET http://localhost:3000/products?page=2&limit=2
+
+### Filter by Title (Apple)
+GET http://localhost:3000/products?filter=Apple
+
+### Sort by Price Ascending
+GET http://localhost:3000/products?sort=totalPrice&order=ASC
+
+### Sort by Price Descending
+GET http://localhost:3000/products?sort=totalPrice&order=DESC
