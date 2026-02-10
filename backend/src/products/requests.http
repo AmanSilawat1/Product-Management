@@ -19,7 +19,7 @@ Content-Type: application/json
 GET http://localhost:3000/products
 
 ### Get All Products (Page 1, Limit 2)
-GET http://localhost:3000/products?page=1&limit=2
+GET http://localhost:3000/products?page=1&limit=20
 
 ### Get All Products (Page 2, Limit 2)
 GET http://localhost:3000/products?page=2&limit=2
@@ -32,3 +32,18 @@ GET http://localhost:3000/products?sort=totalPrice&order=ASC
 
 ### Sort by Price Descending
 GET http://localhost:3000/products?sort=totalPrice&order=DESC
+
+### Update Product
+PATCH http://localhost:3000/products/1
+Content-Type: application/json
+
+{
+  "title": "Updated Product Title",
+  "quantity": 5
+}
+
+### Soft Delete Product
+DELETE http://localhost:3000/products/2
+
+### Restore Product
+PATCH http://localhost:3000/products/2/restore

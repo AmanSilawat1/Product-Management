@@ -1,5 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Product } from './products.entity';
 import { FindManyOptions, Like } from 'typeorm';
 import { CreateProductDto } from './dtos/create-product.dto';
@@ -56,6 +55,27 @@ export class ProductsService {
                 totalPages
             }
         };
+    }
+
+    async update(id: number, attrs: Partial<Product>) {
+        const product = await this.productsRepository.findOne(id);
+        if (!product) {
+            throw new NotFoundException('Product not found');
+        }
+        await this.productsRepository.update(id, attrs);
+        return this.productsRepository.findOne(id);
+    }
+
+    async remove(id: number) {
+        const product = await this.productsRepository.findOne(id);
+        if (!product) {
+            throw new NotFoundException('Product not found');
+        }
+        return this.productsRepository.softDelete(id);
+    }
+
+    async restore(id: number) {
+        return this.productsRepository.restore(id);
     }
 
 }

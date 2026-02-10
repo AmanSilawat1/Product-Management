@@ -23,4 +23,20 @@ export class ProductsRepository {
     findAndCount(options: FindManyOptions<Product>) {
         return this.repo.findAndCount(options);
     }
+
+    findOne(id: number) {
+        return this.repo.findOneBy({ id });
+    }
+
+    update(id: number, attrs: Partial<Product>) {
+        return this.repo.update(id, attrs);
+    }
+
+    softDelete(id: number) {
+        return this.repo.softDelete(id);
+    }
+
+    restore(id: number) {
+        return this.repo.restore(id);
+    }
 }
