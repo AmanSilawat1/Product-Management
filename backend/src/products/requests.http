@@ -8,11 +8,11 @@ Content-Type: application/json
 
 {
   "orderId": 3,
-  "title": "Apple Watch Series 8",
+  "title": "Apple Watch Series 9",
   "description": "Latest Apple Watch with advanced features",
   "quantity": 5,
-  "totalPrice": 110000.00,
-  "totalDiscount": 10000.00
+  "totalPrice": 120000.00,
+  "totalDiscount": 8000.00
 }
 
 ### Get All Products (Default)

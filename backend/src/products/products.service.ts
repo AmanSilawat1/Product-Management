@@ -1,28 +1,26 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from './products.entity';
-import { FindManyOptions, Like, Repository } from 'typeorm';
+import { FindManyOptions, Like } from 'typeorm';
 import { CreateProductDto } from './dtos/create-product.dto';
 import { PaginationDto } from './dtos/pagination.dto';
-import { Order } from '../orders/order.entity';
+import { ProductsRepository } from './products.repository';
 
 @Injectable()
 export class ProductsService {
-    constructor(@InjectRepository(Product) private productRepo: Repository<Product>) { }
+    constructor(private productsRepository: ProductsRepository) { }
 
     createProduct(body: CreateProductDto) {
         if (body.totalDiscount > body.totalPrice) {
             throw new BadRequestException('Total discount cannot be greater than total price');
         }
-        const product = this.productRepo.create({
-            ...body,
-            order: { id: body.orderId } as Order
-        });
-        return this.productRepo.save(product);
+        return this.productsRepository.create(body);
     }
 
     async getAllProducts(paginationDto: PaginationDto) {
-        const { page = 1, limit = 10, filter, sort, order = 'ASC' } = paginationDto;
+        let { page = 1, limit = 10, filter, sort, order = 'ASC' } = paginationDto;
+        page = Number(page);
+        limit = Number(limit);
         const skip = (page - 1) * limit;
 
         const findOptions: FindManyOptions<Product> = {
@@ -45,17 +43,19 @@ export class ProductsService {
             }
         }
 
-        const products = await this.productRepo.find(findOptions);
+        const [products, total] = await this.productsRepository.findAndCount(findOptions);
 
-        return products.map((product) => ({
-            id: product.id,
-            orderId: product.order.id,
-            title: product.title,
-            description: product.description,
-            quantity: product.quantity,
-            totalPrice: product.totalPrice,
-            totalDiscount: product.totalDiscount,
-        }));
+        const totalPages = Math.ceil(total / limit);
+
+        return {
+            data: products,
+            meta: {
+                total,
+                page,
+                limit,
+                totalPages
+            }
+        };
     }
 
 }
