@@ -1,39 +1,49 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useReducer } from 'react';
+import ProductTable from './features/products/components/ProductTable';
+import ProductForm from './features/products/components/ProductForm';
+import './App.css';
 
-function App() {
-  const [count, setCount] = useState(0)
+const initialState = {
+  view: 'table', // 'table' or 'form'
+};
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
-        <h1 className="text-4xl font-bold text-emerald-400">
-          React + Vite + Tailwind v4 🚀
-        </h1>
-      </div>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+function reducer(state, action) {
+  switch (action.type) {
+    case 'SET_VIEW':
+      return { ...state, view: action.payload };
+    default:
+      return state;
+  }
 }
 
-export default App
+function App() {
+  const [state, dispatch] = useReducer(reducer, initialState);
+
+  return (
+    <div className="app-container">
+      <header className="app-header">
+        <h1>Product Management</h1>
+        <nav>
+          <button
+            className={state.view === 'table' ? 'active' : ''}
+            onClick={() => dispatch({ type: 'SET_VIEW', payload: 'table' })}
+          >
+            All Products
+          </button>
+          <button
+            className={state.view === 'form' ? 'active' : ''}
+            onClick={() => dispatch({ type: 'SET_VIEW', payload: 'form' })}
+          >
+            Add Product
+          </button>
+        </nav>
+      </header>
+
+      <main className="app-content">
+        {state.view === 'table' ? <ProductTable /> : <ProductForm />}
+      </main>
+    </div>
+  );
+}
+
+export default App;
