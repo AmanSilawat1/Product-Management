@@ -7,7 +7,7 @@ const ProductTable = () => {
     if (isLoading) return <div>Loading products...</div>;
     if (isError) return <div>Error: {error.message}</div>;
 
-    const products = data?.data || [];
+    const products = data?.items || [];
 
     return (
         <div className="product-table-container">
@@ -18,7 +18,8 @@ const ProductTable = () => {
                         <th>ID</th>
                         <th>Name</th>
                         <th>Price</th>
-                        <th>Category</th>
+                        <th>Quantity</th>
+                        <th>Discount</th>
                         <th>Description</th>
                     </tr>
                 </thead>
@@ -26,15 +27,26 @@ const ProductTable = () => {
                     {products.map((product) => (
                         <tr key={product.id}>
                             <td>{product.id}</td>
-                            <td>{product.name}</td>
-                            <td>${product.price}</td>
-                            <td>{product.category}</td>
+                            <td>{product.title}</td>
+                            <td>
+                                {new Intl.NumberFormat('en-IN', {
+                                    style: 'currency',
+                                    currency: 'INR',
+                                }).format(product.totalPrice)}
+                            </td>
+                            <td>{product.quantity}</td>
+                            <td>
+                                {new Intl.NumberFormat('en-IN', {
+                                    style: 'currency',
+                                    currency: 'INR',
+                                }).format(product.totalDiscount)}
+                            </td>
                             <td>{product.description}</td>
                         </tr>
                     ))}
                     {products.length === 0 && (
                         <tr>
-                            <td colSpan="5" style={{ textAlign: 'center' }}>No products found</td>
+                            <td colSpan="6" style={{ textAlign: 'center' }}>No products found</td>
                         </tr>
                     )}
                 </tbody>
