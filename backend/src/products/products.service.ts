@@ -30,7 +30,7 @@ export class ProductsService {
             },
         };
 
-        if (filter) {
+        if (filter) { // will work as lowercase
             findOptions.where = {
                 title: Like(`%${filter}%`)
             }
@@ -47,7 +47,7 @@ export class ProductsService {
         const totalPages = Math.ceil(total / limit);
 
         return {
-            data: products,
+            items: products,
             meta: {
                 total,
                 page,

@@ -2,39 +2,77 @@ import { Body, Controller, Post, Get, Query, Patch, Param, Delete } from '@nestj
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dtos/create-product.dto';
 import { PaginationDto } from './dtos/pagination.dto';
-import { Serialize } from '../interceptors/serialize.interceptor';
-import { ProductDto } from './dtos/product.dto';
-import { ProductsListDto } from './dtos/products-list.dto';
 import { UpdateProductDto } from './dtos/update-product.dto';
+import { Product } from './products.entity';
+
+interface ApiResponse<T> {
+    success: boolean;
+    message: string;
+    data: T;
+}
+
+interface PaginatedResponse<T> {
+    items: T[];
+    meta: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
+}
 
 @Controller('products')
 export class ProductsController {
     constructor(private productsService: ProductsService) { }
 
     @Post()
-    @Serialize(ProductDto)
-    createProduct(@Body() body: CreateProductDto) {
-        return this.productsService.createProduct(body);
+    // generics types for return response
+    async createProduct(@Body() body: CreateProductDto): Promise<ApiResponse<Product>> {
+        const product = await this.productsService.createProduct(body);
+        return {
+            success: true,
+            message: 'Product created successfully',
+            data: product,
+        };
     }
 
     @Get()
-    @Serialize(ProductsListDto)
-    getAllProducts(@Query() query: PaginationDto) {
-        return this.productsService.getAllProducts(query);
+    async getAllProducts(@Query() query: PaginationDto): Promise<ApiResponse<PaginatedResponse<Product>>> {
+        const result = await this.productsService.getAllProducts(query);
+        return {
+            success: true,
+            message: 'Products retrieved successfully',
+            data: result,
+        };
     }
 
     @Patch('/:id')
-    updateProduct(@Param('id') id: string, @Body() body: UpdateProductDto) {
-        return this.productsService.update(parseInt(id), body);
+    async updateProduct(@Param('id') id: string, @Body() body: UpdateProductDto): Promise<ApiResponse<Product | null>> {
+        const product = await this.productsService.update(parseInt(id), body);
+        return {
+            success: true,
+            message: 'Product updated successfully',
+            data: product,
+        };
     }
 
     @Delete('/:id')
-    removeProduct(@Param('id') id: string) {
-        return this.productsService.remove(parseInt(id));
+    async removeProduct(@Param('id') id: string): Promise<ApiResponse<null>> {
+        await this.productsService.remove(parseInt(id));
+        return {
+            success: true,
+            message: 'Product removed successfully',
+            data: null,
+        };
     }
 
     @Patch('/:id/restore')
-    restoreProduct(@Param('id') id: string) {
-        return this.productsService.restore(parseInt(id));
+    async restoreProduct(@Param('id') id: string): Promise<ApiResponse<null>> {
+        await this.productsService.restore(parseInt(id));
+        return {
+            success: true,
+            message: 'Product restored successfully',
+            data: null,
+        };
     }
 }

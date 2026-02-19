@@ -18,7 +18,7 @@ class MetaDto {
 export class ProductsListDto {
     @Expose()
     @Type(() => ProductDto)
-    data: ProductDto[];
+    items: ProductDto[];
 
     @Expose()
     @Type(() => MetaDto)
