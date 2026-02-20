@@ -3,8 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindManyOptions } from 'typeorm';
 import { Product } from './products.entity';
 import { CreateProductDto } from './dtos/create-product.dto';
-import { Order } from '../orders/order.entity';
-
 @Injectable()
 export class ProductsRepository {
     constructor(
@@ -13,12 +11,10 @@ export class ProductsRepository {
     ) { }
 
     create(productData: CreateProductDto) {
-        const product = this.repo.create({
-            ...productData,
-            order: { id: productData.orderId } as Order
-        });
+        const product = this.repo.create(productData);
         return this.repo.save(product);
     }
+
 
     findAndCount(options: FindManyOptions<Product>) {
         return this.repo.findAndCount(options);
@@ -28,8 +24,15 @@ export class ProductsRepository {
         return this.repo.findOneBy({ id });
     }
 
-    update(id: number, attrs: Partial<Product>) {
-        return this.repo.update(id, attrs);
+    async update(id: number, attrs: Partial<Product>) {
+        const product = await this.repo.preload({
+            id,
+            ...attrs,
+        });
+        if (!product) {
+            return null;
+        }
+        return this.repo.save(product);
     }
 
     softDelete(id: number) {

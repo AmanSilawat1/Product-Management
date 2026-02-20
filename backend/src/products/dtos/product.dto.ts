@@ -19,7 +19,5 @@ export class ProductDto {
     @Expose()
     totalDiscount: number;
 
-    @Transform(({ obj }) => obj.order.id)
-    @Expose()
-    orderId: number;
 }
+

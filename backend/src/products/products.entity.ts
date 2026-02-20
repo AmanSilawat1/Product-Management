@@ -1,16 +1,12 @@
-import { AfterInsert, AfterRemove, AfterUpdate, Column, CreateDateColumn, DeleteDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
-import { Order } from "../orders/order.entity";
+import { AfterInsert, AfterRemove, AfterUpdate, Column, CreateDateColumn, DeleteDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity()
 export class Product {
     @PrimaryGeneratedColumn()
     id: number;
 
-    // order id - required: reference to order.
-    @ManyToOne(() => Order, (order) => order.products)
-    order: Order;
-
     // title - required (non-empty product title)
+
     @Column()
     title: string;
 

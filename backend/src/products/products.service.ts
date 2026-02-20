@@ -3,6 +3,7 @@ import { Product } from './products.entity';
 import { FindManyOptions, Like } from 'typeorm';
 import { CreateProductDto } from './dtos/create-product.dto';
 import { PaginationDto } from './dtos/pagination.dto';
+import { UpdateProductDto } from './dtos/update-product.dto';
 import { ProductsRepository } from './products.repository';
 
 @Injectable()
@@ -25,9 +26,6 @@ export class ProductsService {
         const findOptions: FindManyOptions<Product> = {
             skip: skip,
             take: limit,
-            relations: {
-                order: true
-            },
         };
 
         if (filter) { // will work as lowercase
@@ -57,14 +55,16 @@ export class ProductsService {
         };
     }
 
-    async update(id: number, attrs: Partial<Product>) {
+    async update(id: number, attrs: UpdateProductDto) {
         const product = await this.productsRepository.findOne(id);
         if (!product) {
             throw new NotFoundException('Product not found');
         }
+
         await this.productsRepository.update(id, attrs);
         return this.productsRepository.findOne(id);
     }
+
 
     async remove(id: number) {
         const product = await this.productsRepository.findOne(id);

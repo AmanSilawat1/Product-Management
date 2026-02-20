@@ -1,10 +1,14 @@
-import React from 'react';
+
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { productSchema } from '../schemas/productSchema';
 import { useCreateProduct } from '../hooks/useCreateProduct';
+import { useUpdateProduct } from '../hooks/useUpdateProduct';
 
-const ProductForm = () => {
+const ProductForm = ({ productToEdit, onCancel }) => {
+    const isEditMode = !!productToEdit;
+
     const {
         register,
         handleSubmit,
@@ -13,38 +17,72 @@ const ProductForm = () => {
     } = useForm({
         resolver: zodResolver(productSchema),
         defaultValues: {
-            orderId: '',
-            title: '',
-            description: '',
-            quantity: 1,
-            totalPrice: 0,
-            totalDiscount: 0,
+            title: productToEdit?.title || '',
+            description: productToEdit?.description || '',
+            quantity: productToEdit?.quantity || 1,
+            totalPrice: productToEdit?.totalPrice || 0,
+            totalDiscount: productToEdit?.totalDiscount || 0,
         },
+
     });
 
-    const { mutate, isLoading } = useCreateProduct();
+    useEffect(() => {
+        if (productToEdit) {
+            reset({
+                title: productToEdit?.title || '',
+                description: productToEdit?.description || '',
+                quantity: productToEdit?.quantity || 1,
+                totalPrice: productToEdit?.totalPrice || 0,
+                totalDiscount: productToEdit?.totalDiscount || 0,
+            });
+        } else {
+            reset({
+                title: '',
+                description: '',
+                quantity: 1,
+                totalPrice: 0,
+                totalDiscount: 0,
+            });
+        }
+
+    }, [productToEdit, reset]);
+
+    const createMutation = useCreateProduct();
+    const updateMutation = useUpdateProduct();
+
+    const isLoading = createMutation.isLoading || updateMutation.isLoading;
 
     const onSubmit = (data) => {
-        mutate(data, {
-            onSuccess: () => {
-                reset();
-                alert('Product created successfully!');
-            },
-            onError: (error) => {
-                alert(`Error creating product: ${error.response?.data?.message || error.message}`);
-            },
-        });
+        if (isEditMode) {
+            updateMutation.mutate(
+                { id: productToEdit.id, productData: data },
+                {
+                    onSuccess: () => {
+                        alert('Product updated successfully!');
+                        if (onCancel) onCancel();
+                    },
+                    onError: (error) => {
+                        alert(`Error updating product: ${error.response?.data?.message || error.message}`);
+                    },
+                }
+            );
+        } else {
+            createMutation.mutate(data, {
+                onSuccess: () => {
+                    reset();
+                    alert('Product created successfully!');
+                },
+                onError: (error) => {
+                    alert(`Error creating product: ${error.response?.data?.message || error.message}`);
+                },
+            });
+        }
     };
 
     return (
         <div className="product-form-container">
-            <h2>Add New Product</h2>
+            <h2>{isEditMode ? 'Edit Product' : 'Add New Product'}</h2>
             <form onSubmit={handleSubmit(onSubmit)} className="product-form">
-                <div className="form-group">
-                    <label htmlFor="orderId">Order ID</label>
-                    <input id="orderId" type="number" {...register('orderId')} placeholder="1" />
-                    {errors.orderId && <span className="error">{errors.orderId.message}</span>}
-                </div>
 
                 <div className="form-group">
                     <label htmlFor="title">Title</label>
@@ -76,9 +114,16 @@ const ProductForm = () => {
                     {errors.totalDiscount && <span className="error">{errors.totalDiscount.message}</span>}
                 </div>
 
-                <button type="submit" disabled={isLoading}>
-                    {isLoading ? 'Creating...' : 'Create Product'}
-                </button>
+                <div className="form-actions">
+                    <button type="submit" disabled={isLoading}>
+                        {isLoading ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Product' : 'Create Product')}
+                    </button>
+                    {isEditMode && (
+                        <button type="button" onClick={onCancel} className="cancel-btn">
+                            Cancel
+                        </button>
+                    )}
+                </div>
             </form>
         </div>
     );

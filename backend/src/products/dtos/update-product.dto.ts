@@ -23,4 +23,5 @@ export class UpdateProductDto {
     @IsNumber()
     @Min(0)
     totalDiscount?: number;
+
 }
