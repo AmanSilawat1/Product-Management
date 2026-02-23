@@ -1,16 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import {
+    useReactTable,
+    getCoreRowModel,
+    flexRender,
+} from '@tanstack/react-table';
 import { useProducts } from '../hooks/useProducts';
 import { useDeleteProduct } from '../hooks/useDeleteProduct';
+import './ProductTable.css';
+
 
 const ProductTable = ({ onEdit }) => {
     const [filter, setFilter] = useState('');
     const [page, setPage] = useState(1);
-    const { data, isLoading, isError, error } = useProducts(page, 10, filter);
+    const [sorting, setSorting] = useState([]);
+
+    const sortField = sorting.length > 0 ? sorting[0].id : '';
+    const sortOrder = sorting.length > 0 ? (sorting[0].desc ? 'DESC' : 'ASC') : 'ASC';
+
+    const { data, isLoading, isError, error } = useProducts(page, 10, filter, sortField, sortOrder);
     const deleteMutation = useDeleteProduct();
 
     const handleSearchChange = (e) => {
         setFilter(e.target.value);
-        setPage(1); // Reset to first page on search
+        setPage(1);
     };
 
     const handleDelete = (id) => {
@@ -26,10 +38,76 @@ const ProductTable = ({ onEdit }) => {
         }
     };
 
+    const columns = useMemo(
+        () => [
+            {
+                accessorKey: 'id',
+                header: 'ID',
+                enableSorting: true,
+                cell: ({ getValue }) => <span className="id-column">{getValue()}</span>,
+            },
+            {
+                accessorKey: 'title',
+                header: 'Name',
+            },
+            {
+                accessorKey: 'totalPrice',
+                header: 'Price',
+                cell: ({ getValue }) =>
+                    new Intl.NumberFormat('en-IN', {
+                        style: 'currency',
+                        currency: 'INR',
+                    }).format(getValue()),
+            },
+            {
+                accessorKey: 'quantity',
+                header: 'Quantity',
+            },
+            {
+                accessorKey: 'totalDiscount',
+                header: 'Discount',
+                cell: ({ getValue }) =>
+                    new Intl.NumberFormat('en-IN', {
+                        style: 'currency',
+                        currency: 'INR',
+                    }).format(getValue()),
+            },
+            {
+                accessorKey: 'description',
+                header: 'Description',
+                cell: ({ getValue }) => <div className="description-cell">{getValue() || '-'}</div>,
+            },
+            {
+                id: 'actions',
+                header: 'Actions',
+                enableSorting: false,
+                cell: ({ row }) => (
+                    <div className="actions-cell">
+                        <button onClick={() => onEdit(row.original)} className="edit-btn">Edit</button>
+                        <button onClick={() => handleDelete(row.original.id)} className="delete-btn">Delete</button>
+                    </div>
+                ),
+            },
+        ],
+        [onEdit]
+    );
+
+
+    const table = useReactTable({
+        data: data?.items || [],
+        columns,
+        state: {
+            sorting,
+        },
+        onSortingChange: setSorting,
+        getCoreRowModel: getCoreRowModel(),
+        manualSorting: true, // Server-side sorting
+        manualPagination: true,
+    });
+
     if (isLoading) return <div>Loading products...</div>;
     if (isError) return <div>Error: {error.message}</div>;
 
-    const products = data?.items || [];
     const meta = data?.meta || {};
 
     return (
@@ -48,53 +126,46 @@ const ProductTable = ({ onEdit }) => {
             </div>
             <table className="product-table">
                 <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Price</th>
-                        <th>Quantity</th>
-                        <th>Discount</th>
-                        <th>Description</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {products.map((product) => (
-                        <tr key={product.id}>
-                            <td>{product.id}</td>
-                            <td>{product.title}</td>
-                            <td>
-                                {new Intl.NumberFormat('en-IN', {
-                                    style: 'currency',
-                                    currency: 'INR',
-                                }).format(product.totalPrice)}
-                            </td>
-                            <td>{product.quantity}</td>
-                            <td>
-                                {new Intl.NumberFormat('en-IN', {
-                                    style: 'currency',
-                                    currency: 'INR',
-                                }).format(product.totalDiscount)}
-                            </td>
-                            <td>{product.description}</td>
-                            <td className="actions-cell">
-                                <button onClick={() => onEdit(product)} className="edit-btn">Edit</button>
-                                <button onClick={() => handleDelete(product.id)} className="delete-btn">Delete</button>
-                            </td>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                        <tr key={headerGroup.id}>
+                            {headerGroup.headers.map((header) => (
+                                <th
+                                    key={header.id}
+                                    onClick={header.column.getCanSort() ? header.column.getToggleSortingHandler() : undefined}
+                                    style={{ cursor: header.column.getCanSort() ? 'pointer' : 'default' }}
+                                >
+                                    {flexRender(header.column.columnDef.header, header.getContext())}
+                                    {{
+                                        asc: ' 🔼',
+                                        desc: ' 🔽',
+                                    }[header.column.getIsSorted()] || null}
+                                </th>
+                            ))}
                         </tr>
                     ))}
-                    {products.length === 0 && (
+                </thead>
+                <tbody>
+                    {table.getRowModel().rows.map((row) => (
+                        <tr key={row.id}>
+                            {row.getVisibleCells().map((cell) => (
+                                <td key={cell.id}>
+                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                </td>
+                            ))}
+                        </tr>
+                    ))}
+                    {table.getRowModel().rows.length === 0 && (
                         <tr>
-                            <td colSpan="7" style={{ textAlign: 'center' }}>No products found</td>
+                            <td colSpan={columns.length} style={{ textAlign: 'center' }}>No products found</td>
                         </tr>
                     )}
                 </tbody>
             </table>
             {meta.totalPages > 1 && (
                 <div className="pagination">
-                    <button disabled={page === 1} onClick={() => setPage(p => p - 1)}>Prev</button>
+                    <button disabled={page === 1} onClick={() => setPage((p) => p - 1)}>Prev</button>
                     <span>Page {page} of {meta.totalPages}</span>
-                    <button disabled={page === meta.totalPages} onClick={() => setPage(p => p + 1)}>Next</button>
+                    <button disabled={page === meta.totalPages} onClick={() => setPage((p) => p + 1)}>Next</button>
                 </div>
             )}
         </div>
@@ -102,3 +173,4 @@ const ProductTable = ({ onEdit }) => {
 };
 
 export default ProductTable;
+

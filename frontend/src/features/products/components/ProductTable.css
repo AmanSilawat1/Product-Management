@@ -1,0 +1,57 @@
+.product-table th {
+    position: relative;
+    user-select: none;
+    transition: background-color 0.2s ease;
+}
+
+.product-table th:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.sort-indicator {
+    display: inline-block;
+    width: 20px;
+    text-align: center;
+    font-size: 0.8rem;
+    transition: transform 0.2s ease;
+}
+
+.description-cell {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+
+.description-cell:hover {
+    white-space: normal;
+    overflow: visible;
+    position: relative;
+    z-index: 10;
+    color: var(--text-color);
+}
+
+.product-table tr {
+    transition: background-color 0.2s ease;
+}
+
+.product-table tr:hover {
+    background-color: rgba(16, 185, 129, 0.03);
+}
+
+.actions-cell {
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+tr:hover .actions-cell {
+    opacity: 1;
+}
+
+.id-column {
+    width: 60px;
+    font-weight: 700;
+    color: #64748b;
+}
