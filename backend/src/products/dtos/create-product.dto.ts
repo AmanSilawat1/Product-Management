@@ -15,8 +15,10 @@ export class CreateProductDto {
     quantity: number;
 
     @IsNumber()
+    @Min(0)
     totalPrice: number;
 
     @IsNumber()
+    @Min(0)
     totalDiscount: number;
 }

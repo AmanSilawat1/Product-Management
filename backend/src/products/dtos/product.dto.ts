@@ -14,10 +14,19 @@ export class ProductDto {
     quantity: number;
 
     @Expose()
+    unitPrice: number;
+
+    @Expose()
     totalPrice: number;
 
     @Expose()
     totalDiscount: number;
+
+    @Expose()
+    createdAt: Date;
+
+    @Expose()
+    updatedAt: Date;
 
 }
 

@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { productSchema } from '../schemas/productSchema';
 import { useCreateProduct } from '../hooks/useCreateProduct';
 import { useUpdateProduct } from '../hooks/useUpdateProduct';
+import { toast } from 'react-hot-toast';
 
 const ProductForm = ({ productToEdit, onCancel }) => {
     const isEditMode = !!productToEdit;
@@ -13,6 +14,8 @@ const ProductForm = ({ productToEdit, onCancel }) => {
         register,
         handleSubmit,
         reset,
+        watch,
+        setValue,
         formState: { errors },
     } = useForm({
         resolver: zodResolver(productSchema),
@@ -20,11 +23,20 @@ const ProductForm = ({ productToEdit, onCancel }) => {
             title: productToEdit?.title || '',
             description: productToEdit?.description || '',
             quantity: productToEdit?.quantity || 1,
+            unitPrice: productToEdit?.totalPrice && productToEdit?.quantity ? (productToEdit.totalPrice / productToEdit.quantity) : 0,
             totalPrice: productToEdit?.totalPrice || 0,
             totalDiscount: productToEdit?.totalDiscount || 0,
         },
 
     });
+
+    const quantity = watch('quantity');
+    const unitPrice = watch('unitPrice');
+
+    useEffect(() => {
+        const total = (Number(quantity) || 0) * (Number(unitPrice) || 0);
+        setValue('totalPrice', total);
+    }, [quantity, unitPrice, setValue]);
 
     useEffect(() => {
         if (productToEdit) {
@@ -32,6 +44,7 @@ const ProductForm = ({ productToEdit, onCancel }) => {
                 title: productToEdit?.title || '',
                 description: productToEdit?.description || '',
                 quantity: productToEdit?.quantity || 1,
+                unitPrice: productToEdit?.totalPrice && productToEdit?.quantity ? (productToEdit.totalPrice / productToEdit.quantity) : 0,
                 totalPrice: productToEdit?.totalPrice || 0,
                 totalDiscount: productToEdit?.totalDiscount || 0,
             });
@@ -40,6 +53,7 @@ const ProductForm = ({ productToEdit, onCancel }) => {
                 title: '',
                 description: '',
                 quantity: 1,
+                unitPrice: 0,
                 totalPrice: 0,
                 totalDiscount: 0,
             });
@@ -53,27 +67,31 @@ const ProductForm = ({ productToEdit, onCancel }) => {
     const isLoading = createMutation.isLoading || updateMutation.isLoading;
 
     const onSubmit = (data) => {
+        // unitPrice is not needed in backend
+        const { unitPrice, ...productData } = data;
+
         if (isEditMode) {
             updateMutation.mutate(
-                { id: productToEdit.id, productData: data },
+                { id: productToEdit.id, productData },
                 {
                     onSuccess: () => {
-                        alert('Product updated successfully!');
+                        toast.success('Product updated successfully!');
                         if (onCancel) onCancel();
                     },
                     onError: (error) => {
-                        alert(`Error updating product: ${error.response?.data?.message || error.message}`);
+                        toast.error(`Error updating product: ${error.response?.data?.message || error.message}`);
                     },
                 }
             );
         } else {
-            createMutation.mutate(data, {
+            createMutation.mutate(productData, {
                 onSuccess: () => {
                     reset();
-                    alert('Product created successfully!');
+                    toast.success('Product created successfully!');
+                    if (onCancel) onCancel();
                 },
                 onError: (error) => {
-                    alert(`Error creating product: ${error.response?.data?.message || error.message}`);
+                    toast.error(`Error creating product: ${error.response?.data?.message || error.message}`);
                 },
             });
         }
@@ -81,7 +99,6 @@ const ProductForm = ({ productToEdit, onCancel }) => {
 
     return (
         <div className="product-form-container">
-            <h2>{isEditMode ? 'Edit Product' : 'Add New Product'}</h2>
             <form onSubmit={handleSubmit(onSubmit)} className="product-form">
 
                 <div className="form-group">
@@ -96,15 +113,24 @@ const ProductForm = ({ productToEdit, onCancel }) => {
                     {errors.description && <span className="error">{errors.description.message}</span>}
                 </div>
 
-                <div className="form-group">
-                    <label htmlFor="quantity">Quantity</label>
-                    <input id="quantity" type="number" {...register('quantity')} placeholder="1" />
-                    {errors.quantity && <span className="error">{errors.quantity.message}</span>}
+                <div className="form-group-row">
+                    <div className="form-group">
+                        <label htmlFor="quantity">Quantity</label>
+                        <input id="quantity" type="number" {...register('quantity')} placeholder="1" />
+                        {errors.quantity && <span className="error">{errors.quantity.message}</span>}
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="unitPrice">Unit Price</label>
+                        <input id="unitPrice" type="number" step="0.01" {...register('unitPrice')} placeholder="0.00" />
+                        {errors.unitPrice && <span className="error">{errors.unitPrice.message}</span>}
+                    </div>
+
                 </div>
 
                 <div className="form-group">
-                    <label htmlFor="totalPrice">Total Price</label>
-                    <input id="totalPrice" type="number" step="0.01" {...register('totalPrice')} placeholder="0.00" />
+                    <label htmlFor="totalPrice">Total Price (Quantity * Unit Price)</label>
+                    <input id="totalPrice" type="number" step="0.01" {...register('totalPrice')} placeholder="0.00" disabled />
                     {errors.totalPrice && <span className="error">{errors.totalPrice.message}</span>}
                 </div>
 
@@ -115,7 +141,7 @@ const ProductForm = ({ productToEdit, onCancel }) => {
                 </div>
 
                 <div className="form-actions">
-                    <button type="submit" disabled={isLoading}>
+                    <button type="submit" disabled={isLoading} className="submit-btn">
                         {isLoading ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Product' : 'Create Product')}
                     </button>
                     {isEditMode && (

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Product } from './products.entity';
-import { FindManyOptions, Like } from 'typeorm';
+import { FindManyOptions, ILike } from 'typeorm';
 import { CreateProductDto } from './dtos/create-product.dto';
 import { PaginationDto } from './dtos/pagination.dto';
 import { UpdateProductDto } from './dtos/update-product.dto';
@@ -28,10 +28,11 @@ export class ProductsService {
             take: limit,
         };
 
-        if (filter) { // will work as lowercase
-            findOptions.where = {
-                title: Like(`%${filter}%`)
-            }
+        if (filter) {
+            findOptions.where = [
+                { title: ILike(`%${filter}%`) },
+                { description: ILike(`%${filter}%`) }
+            ];
         }
 
         if (sort) {
@@ -59,6 +60,14 @@ export class ProductsService {
         const product = await this.productsRepository.findOne(id);
         if (!product) {
             throw new NotFoundException('Product not found');
+        }
+
+        // Calculate final totalPrice and totalDiscount for validation
+        const totalPrice = attrs.totalPrice !== undefined ? attrs.totalPrice : product.totalPrice;
+        const totalDiscount = attrs.totalDiscount !== undefined ? attrs.totalDiscount : product.totalDiscount;
+
+        if (totalDiscount > totalPrice) {
+            throw new BadRequestException('Total discount cannot be greater than total price');
         }
 
         await this.productsRepository.update(id, attrs);

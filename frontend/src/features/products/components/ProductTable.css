@@ -25,13 +25,6 @@
     font-size: 0.9rem;
 }
 
-.description-cell:hover {
-    white-space: normal;
-    overflow: visible;
-    position: relative;
-    z-index: 10;
-    color: var(--text-color);
-}
 
 .product-table tr {
     transition: background-color 0.2s ease;
@@ -48,6 +41,22 @@
 
 tr:hover .actions-cell {
     opacity: 1;
+}
+
+tr:hover .edit-btn,
+.delete-btn,
+.view-btn {
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+}
+
+.view-btn {
+    background-color: var(--primary-color);
+    color: white;
 }
 
 .id-column {

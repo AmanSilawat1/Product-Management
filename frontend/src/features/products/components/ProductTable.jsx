@@ -6,22 +6,26 @@ import {
 } from '@tanstack/react-table';
 import { useProducts } from '../hooks/useProducts';
 import { useDeleteProduct } from '../hooks/useDeleteProduct';
+import { useDebounce } from '../../../hooks/useDebounce';
+import { toast } from 'react-hot-toast';
 import './ProductTable.css';
 
 
 const ProductTable = ({ onEdit }) => {
-    const [filter, setFilter] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
     const [page, setPage] = useState(1);
     const [sorting, setSorting] = useState([]);
+
+    const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
     const sortField = sorting.length > 0 ? sorting[0].id : '';
     const sortOrder = sorting.length > 0 ? (sorting[0].desc ? 'DESC' : 'ASC') : 'ASC';
 
-    const { data, isLoading, isError, error } = useProducts(page, 10, filter, sortField, sortOrder);
+    const { data, isLoading, isError, error } = useProducts(page, 10, debouncedSearchTerm, sortField, sortOrder);
     const deleteMutation = useDeleteProduct();
 
     const handleSearchChange = (e) => {
-        setFilter(e.target.value);
+        setSearchTerm(e.target.value);
         setPage(1);
     };
 
@@ -29,10 +33,10 @@ const ProductTable = ({ onEdit }) => {
         if (window.confirm('Are you sure you want to delete this product?')) {
             deleteMutation.mutate(id, {
                 onSuccess: () => {
-                    alert('Product deleted successfully');
+                    toast.success('Product deleted successfully');
                 },
                 onError: (error) => {
-                    alert(`Error deleting product: ${error.message}`);
+                    toast.error(`Error deleting product: ${error.message}`);
                 }
             });
         }
@@ -83,7 +87,8 @@ const ProductTable = ({ onEdit }) => {
                 enableSorting: false,
                 cell: ({ row }) => (
                     <div className="actions-cell">
-                        <button onClick={() => onEdit(row.original)} className="edit-btn">Edit</button>
+                        <button onClick={() => onEdit(row.original, 'view')} className="view-btn">View</button>
+                        <button onClick={() => onEdit(row.original, 'edit')} className="edit-btn">Edit</button>
                         <button onClick={() => handleDelete(row.original.id)} className="delete-btn">Delete</button>
                     </div>
                 ),
@@ -118,7 +123,7 @@ const ProductTable = ({ onEdit }) => {
                     <input
                         type="text"
                         placeholder="Search products..."
-                        value={filter}
+                        value={searchTerm}
                         onChange={handleSearchChange}
                         className="search-input"
                     />
