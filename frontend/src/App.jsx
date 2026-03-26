@@ -75,6 +75,12 @@ function App() {
           >
             Add Product
           </button>
+          <button
+            onClick={() => window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/customers/export`, '_blank')}
+            className="export-btn"
+          >
+            Export Customers
+          </button>
         </nav>
       </header>
 
