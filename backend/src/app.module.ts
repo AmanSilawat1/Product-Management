@@ -4,25 +4,32 @@ import { ProductsModule } from './products/products.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { User } from './users/user.entity';
-import { Product } from './products/products.entity';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+
 
 @Module({
-    imports: [
-        TypeOrmModule.forRoot({
-            type: process.env.DB_TYPE as any || 'sqlite',
-            host: process.env.DB_HOST,
-            port: parseInt(process.env.DB_PORT || '5432', 10),
-            username: process.env.DB_USERNAME,
-            password: process.env.DB_PASSWORD,
-            database: process.env.DB_DATABASE || 'db.sqlite',
-            entities: [User, Product],
-            synchronize: true,
-        }),
-        UsersModule,
-        ProductsModule,
-    ],
-    controllers: [AppController],
-    providers: [AppService]
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: configService.get<string>('DB_TYPE') as any || 'postgres',
+        host: configService.get<string>('DB_HOST'),
+        port: configService.get<number>('DB_PORT'),
+        username: configService.get<string>('DB_USERNAME'),
+        password: configService.get<string>('DB_PASSWORD'),
+        database: configService.get<string>('DB_DATABASE'),
+        autoLoadEntities: true,
+        synchronize: true, // Set to false in production
+      }),
+    }),
+    UsersModule,
+    ProductsModule,
+  ],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule { }
