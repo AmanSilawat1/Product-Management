@@ -61,9 +61,9 @@ export class CustomersService {
         }).commit();
         
         count++;
-        if (count % 1000 === 0) {
-          // Throttle to keep CPU usage < 10%
-          await new Promise(resolve => setTimeout(resolve, 500));
+        if (count % 500 === 0) {
+          // Aggressive throttle to keep CPU usage < 10% (0.2 cores)
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
 
         if (count % 10000 === 0) {
