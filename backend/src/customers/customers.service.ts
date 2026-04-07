@@ -12,9 +12,12 @@ export class CustomersService {
   constructor(
     @InjectRepository(Customer)
     private readonly customerRepository: Repository<Customer>,
-  ) {}
+  ) { }
 
   async exportToExcel(res: Response) {
+    const startTime = performance.now();
+    this.logger.log('Starting Excel export process...');
+
     res.setHeader(
       'Content-Type',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -26,7 +29,7 @@ export class CustomersService {
 
     const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
       stream: res,
-      useStyles: true,
+      useStyles: false,
       useSharedStrings: false,
     });
 
@@ -39,6 +42,7 @@ export class CustomersService {
       { header: 'Created At', key: 'createdAt', width: 25 },
     ];
 
+    this.logger.log('Querying database for customer records...');
     const stream = await this.customerRepository
       .createQueryBuilder('customer')
       .select([
@@ -50,8 +54,10 @@ export class CustomersService {
       .stream();
 
     let count = 0;
-    
+
     try {
+      this.logger.log('Stream started, writing rows to Excel...');
+      const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
       for await (const row of stream) {
         worksheet.addRow({
           id: row.customer_id,
@@ -59,22 +65,23 @@ export class CustomersService {
           phoneNumber: row.customer_phone_number,
           createdAt: row.customer_created_at,
         }).commit();
-        
+
         count++;
-        if (count % 500 === 0) {
-          // Aggressive throttle to keep CPU usage < 10% (0.2 cores)
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
 
         if (count % 10000 === 0) {
-          this.logger.log(`Exported ${count} rows so far...`);
+          await sleep(50);
+          const currentTime = performance.now();
+          const elapsed = ((currentTime - startTime) / 1000).toFixed(2);
+          this.logger.log(`[Export Progress] ${count} rows processed so far... (Elapsed: ${elapsed}s)`);
         }
       }
 
       await workbook.commit();
-      this.logger.log(`Export completed. Total rows: ${count}`);
+      const endTime = performance.now();
+      const duration = ((endTime - startTime) / 1000).toFixed(2);
+      this.logger.log(`Excel export successfully completed. Total rows: ${count}. Total duration: ${duration}s`);
     } catch (error) {
-      this.logger.error('Error during export', error);
+      this.logger.error(`CRITICAL: Excel export failed after ${count} rows. error: ${error.message}`, error.stack);
       if (!res.headersSent) {
         res.status(500).send('Export failed');
       }
