@@ -6,7 +6,7 @@ import type { Response } from 'express';
 export class CustomersController {
   private readonly logger = new Logger(CustomersController.name);
 
-  constructor(private readonly customersService: CustomersService) {}
+  constructor(private readonly customersService: CustomersService) { }
 
   @Get('export')
   async exportToExcel(@Res() res: Response) {

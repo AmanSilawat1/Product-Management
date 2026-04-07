@@ -29,7 +29,7 @@ export class CustomersService {
 
     const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
       stream: res,
-      useStyles: false,
+      useStyles: true,
       useSharedStrings: false,
     });
 
@@ -57,7 +57,6 @@ export class CustomersService {
 
     try {
       this.logger.log('Stream started, writing rows to Excel...');
-      const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
       for await (const row of stream) {
         worksheet.addRow({
           id: row.customer_id,
@@ -69,7 +68,8 @@ export class CustomersService {
         count++;
 
         if (count % 10000 === 0) {
-          await sleep(50);
+          // Throttle to keep CPU usage < 10%
+          await new Promise(resolve => setTimeout(resolve, 500));
           const currentTime = performance.now();
           const elapsed = ((currentTime - startTime) / 1000).toFixed(2);
           this.logger.log(`[Export Progress] ${count} rows processed so far... (Elapsed: ${elapsed}s)`);
