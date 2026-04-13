@@ -254,6 +254,135 @@ export class CustomersService implements OnModuleInit {
     }
   }
 
+  // async exportToExcel(res: Response): Promise<void> {
+  //   const startTime = performance.now();
+
+  //   res.setHeader(
+  //     'Content-Type',
+  //     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  //   );
+
+  //   res.setHeader(
+  //     'Content-Disposition',
+  //     'attachment; filename=customers_export.xlsx',
+  //   );
+
+  //   const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
+  //     stream: res,
+  //     useStyles: false,
+  //     useSharedStrings: false,
+  //     // zip: { zlib: { level: 1 } }, // 🔥 reduces compression CPU
+  //   });
+
+  //   const worksheet = workbook.addWorksheet('Customers');
+
+  //   worksheet.columns = [
+  //     { header: 'ID', key: 'id', width: 40 },
+  //     { header: 'User ID', key: 'userId', width: 40 },
+  //     { header: 'Phone Number', key: 'phoneNumber', width: 20 },
+  //     { header: 'Created At', key: 'createdAt', width: 25 },
+  //   ];
+
+  //   const batchSize = 300; // 🔥 smaller batch = lower CPU
+  //   // let lastCreatedAt: Date | null = null;
+  //   let total = 0;
+
+  //   let lastCreatedAt: Date | null = null;
+  //   let lastId: string | null = null; // or number based on your DB
+
+
+  //   try {
+  //     while (true) {
+  //       const query = this.customerRepository
+  //         .createQueryBuilder('customer')
+  //         .select([
+  //           'customer.id',
+  //           'customer.userId',
+  //           'customer.phoneNumber',
+  //           'customer.createdAt',
+  //         ])
+  //         .orderBy('customer.createdAt', 'DESC')
+  //         .limit(batchSize);
+
+  //       if (lastCreatedAt) {
+  //         query.where('customer.createdAt < :cursor', {
+  //           cursor: lastCreatedAt,
+  //         });
+  //       }
+
+
+  //       // const rows = await query.getRawMany();
+  //       const rows = await this.customerRepository.query(
+  //         `
+  // SELECT id, user_id, phone_number, created_at
+  // FROM customers
+  // WHERE 
+  //   ($1::timestamp IS NULL)
+  //   OR (
+  //     created_at < $1
+  //     OR (created_at = $1 AND id < $2)
+  //   )
+  // ORDER BY created_at DESC, id DESC
+  // LIMIT $3
+  // `,
+  //         [lastCreatedAt, lastId, batchSize],
+  //       );
+
+
+  //       if (!rows.length) break;
+
+  //       for (const row of rows) {
+  //         worksheet.addRow({
+  //           id: row.customer_id,
+  //           userId: row.customer_user_id,
+  //           phoneNumber: row.customer_phone_number,
+  //           createdAt: row.customer_created_at,
+  //         }).commit();
+
+  //         total++;
+  //       }
+
+  //       lastCreatedAt = rows[rows.length - 1].customer_created_at;
+
+  //       // 🔥 Release event loop
+  //       await new Promise((resolve) => setImmediate(resolve));
+  //       // if (total % 500 === 0) {
+  //       //   await new Promise((resolve) => setImmediate(resolve));
+  //       // }
+
+  //       // 🔥 Hard throttle every 5000 rows
+  //       if (total % 2000 === 0) {
+  //         await new Promise((r) => setTimeout(r, 300));
+
+  //         const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+
+  //         this.logger.log(
+  //           `[Export Progress] ${total} rows processed (${elapsed}s)`
+  //         );
+  //       }
+  //     }
+
+  //     await workbook.commit();
+
+  //     const duration = ((performance.now() - startTime) / 1000).toFixed(2);
+
+  //     this.logger.log(
+  //       `Excel export finished. Rows: ${total}. Duration: ${duration}s`
+  //     );
+  //   } catch (error) {
+  //     this.logger.error(
+  //       `Export failed after ${total} rows: ${error.message}`,
+  //       error.stack,
+  //     );
+
+  //     if (!res.headersSent) {
+  //       res.status(500).send('Export failed');
+  //     }
+  //   }
+  // }
+
+
+
   async exportToExcel(res: Response): Promise<void> {
     const startTime = performance.now();
 
@@ -271,7 +400,6 @@ export class CustomersService implements OnModuleInit {
       stream: res,
       useStyles: false,
       useSharedStrings: false,
-      // zip: { zlib: { level: 1 } }, // 🔥 reduces compression CPU
     });
 
     const worksheet = workbook.addWorksheet('Customers');
@@ -283,58 +411,64 @@ export class CustomersService implements OnModuleInit {
       { header: 'Created At', key: 'createdAt', width: 25 },
     ];
 
-    const batchSize = 1000; // 🔥 smaller batch = lower CPU
-    let lastCreatedAt: Date | null = null;
+    const batchSize = 300;
+
     let total = 0;
+    let lastCreatedAt: Date | null = null;
+    let lastId: string | null = null; // or number
 
     try {
       while (true) {
-        const query = this.customerRepository
-          .createQueryBuilder('customer')
-          .select([
-            'customer.id',
-            'customer.userId',
-            'customer.phoneNumber',
-            'customer.createdAt',
-          ])
-          .orderBy('customer.createdAt', 'DESC')
-          .limit(batchSize);
-
-        if (lastCreatedAt) {
-          query.where('customer.createdAt < :cursor', {
-            cursor: lastCreatedAt,
-          });
-        }
-
-        const rows = await query.getRawMany();
+        const rows = await this.customerRepository.query(
+          `
+        SELECT id, user_id, phone_number, created_at
+        FROM customers
+        WHERE 
+          ($1::timestamp IS NULL)
+          OR (
+            created_at < $1
+            OR (created_at = $1 AND id < $2)
+          )
+        ORDER BY created_at DESC, id DESC
+        LIMIT $3
+        `,
+          [lastCreatedAt, lastId, batchSize],
+        );
 
         if (!rows.length) break;
 
         for (const row of rows) {
-          worksheet.addRow({
-            id: row.customer_id,
-            userId: row.customer_user_id,
-            phoneNumber: row.customer_phone_number,
-            createdAt: row.customer_created_at,
-          }).commit();
+          worksheet
+            .addRow({
+              id: row.id,
+              userId: row.user_id,
+              phoneNumber: row.phone_number,
+              createdAt: row.created_at,
+            })
+            .commit();
 
           total++;
+
+
+          if (total % 500 === 0) {
+            await new Promise((resolve) => setImmediate(resolve));
+          }
         }
 
-        lastCreatedAt = rows[rows.length - 1].customer_created_at;
 
-        // 🔥 Release event loop
-        await new Promise((resolve) => setImmediate(resolve));
+        const last = rows[rows.length - 1];
+        lastCreatedAt = last.created_at;
+        lastId = last.id;
 
-        // 🔥 Hard throttle every 5000 rows
-        if (total % 5000 === 0) {
-          await new Promise((r) => setTimeout(r, 200));
+
+        if (total % 2000 === 0) {
+          await new Promise((r) => setTimeout(r, 300));
 
           const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
 
-          this.logger.log(
-            `[Export Progress] ${total} rows processed (${elapsed}s)`
-          );
+          // this.logger.log(
+          //   [Export Progress] ${total} rows processed (${elapsed}s)
+          // );
         }
       }
 
@@ -342,19 +476,20 @@ export class CustomersService implements OnModuleInit {
 
       const duration = ((performance.now() - startTime) / 1000).toFixed(2);
 
-      this.logger.log(
-        `Excel export finished. Rows: ${total}. Duration: ${duration}s`
-      );
+      // this.logger.log(
+      //   Excel export finished. Rows: ${total}. Duration: ${duration}s
+      // );
     } catch (error) {
-      this.logger.error(
-        `Export failed after ${total} rows: ${error.message}`,
-        error.stack,
-      );
+      // this.logger.error(
+      //   Export failed after ${total} rows: ${error.message},
+      //   error.stack,
+      // );
 
       if (!res.headersSent) {
         res.status(500).send('Export failed');
       }
     }
+
   }
 }
 
