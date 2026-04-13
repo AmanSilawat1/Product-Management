@@ -10,4 +10,4 @@ import { CustomersController } from './customers.controller';
   controllers: [CustomersController],
   exports: [CustomersService],
 })
-export class CustomersModule {}
+export class CustomersModule { }

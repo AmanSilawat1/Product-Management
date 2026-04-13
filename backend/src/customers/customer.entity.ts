@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, DeleteDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity('customers')
 export class Customer {
@@ -11,6 +11,7 @@ export class Customer {
     @Column({ name: 'phone_number', nullable: true })
     phoneNumber: string;
 
+    @Index()
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
